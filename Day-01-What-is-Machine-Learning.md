@@ -32,20 +32,3 @@ Examples:
 An agent learns by interacting with an environment and receiving rewards or penalties.
 
 Examples:
-- Game playing
-- Robotics
-- Recommendation systems
-
-## Key ML Workflow
-
-1. Collect data
-2. Clean and preprocess data
-3. Split data into training and testing sets
-4. Train the model
-5. Evaluate the model
-6. Tune and improve the model
-7. Use the model for predictions
-
-## Key Takeaway
-
-Machine Learning is essentially about learning useful patterns from data so that a model can generalize to new, unseen data.
