@@ -1,5 +1,4 @@
 # Day 01 — What is Machine Learning?
-
 ## What is Machine Learning?
 
 Machine Learning is a branch of Artificial Intelligence where computers learn patterns from data and use those patterns to make predictions or decisions without being explicitly programmed for every situation.
