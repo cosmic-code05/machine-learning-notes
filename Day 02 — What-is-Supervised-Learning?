@@ -1,4 +1,4 @@
-*What is Supervised Learning?*
+What is Supervised Learning?
 
 Supervised Learning is a type of Machine Learning where models learn from labeled data. Each data point has an associated "label" or "target" that tells the model the correct answer. The model learns to predict these labels for new, unseen data.
 
