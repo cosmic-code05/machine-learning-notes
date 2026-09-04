@@ -1,6 +1,5 @@
-Day 03 — Unsupervised Learning Fundamentals
-
 What is Unsupervised Learning?
+
 Unsupervised Learning is a type of Machine Learning where models learn patterns from unlabeled data. The data has no predefined "correct answers" or labels. The model discovers hidden structures, patterns, and relationships on its own.
 
 Key Characteristic: Training data contains only features (inputs), no labels (outputs)
