@@ -1,0 +1,48 @@
+Yes. **Day 4 = Unsupervised Learning** based on your notes. 
+
+### Day 4 — What you need to learn
+
+**1. Clustering**
+
+* K-Means
+* Hierarchical / Agglomerative
+* DBSCAN
+* GMM
+* Mean Shift
+
+**2. Dimensionality Reduction**
+
+* PCA ⭐
+* t-SNE
+* UMAP
+* Feature Selection
+* Autoencoders
+* SVD / Matrix Factorization
+
+**3. Choosing the algorithm**
+Know *when to use which one* rather than memorizing everything. 
+
+**4. Evaluation**
+
+* Silhouette Score ⭐
+* Davies-Bouldin Index
+* Calinski-Harabasz
+* Elbow Method
+* Variance Explained for PCA 
+
+**5. Practical**
+Today, I'd focus on:
+
+> **K-Means → DBSCAN → PCA**
+
+These are the most important to actually understand and implement.
+
+### Your Day 4 target
+
+By the end of today, you should be able to answer:
+
+> **“I have an unlabeled dataset. How do I find groups in it, and how do I reduce its dimensions?”**
+
+Answer: **Clustering + Dimensionality Reduction.** 
+
+If you're continuing your **30-day ML challenge**, I can also give you the exact **Day 4 study + coding checklist** in the same style as your previous days.
