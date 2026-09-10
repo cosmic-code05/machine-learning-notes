@@ -1,0 +1,54 @@
+# **Day 5 — Model Evaluation & Hyperparameter Tuning**
+
+### Day 5 — What you need to learn
+
+**1. Validation Strategies**
+
+* Train/Test Split ⭐
+* K-Fold Cross-Validation ⭐
+* Stratified K-Fold
+* Time Series Split
+* Leave-One-Out CV
+
+**2. Hyperparameter Tuning**
+
+* Grid Search ⭐
+* Random Search
+* Bayesian Optimization
+* Hyperband / Successive Halving
+* Learning Rate Scheduling
+
+**3. Model Selection**
+
+* Bias-Variance Tradeoff ⭐
+* Learning Curves
+* Underfitting vs Overfitting
+* Regularization (L1, L2, Dropout)
+* Early Stopping
+
+**4. Metrics for Different Problems**
+
+* **Classification**: Precision, Recall, F1, ROC-AUC ⭐
+* **Regression**: MAE, RMSE, R² ⭐
+* **Imbalanced Data**: Confusion Matrix, Class Weights
+* Threshold Tuning
+
+**5. Practical**
+
+Today, focus on:
+
+> **Cross-Validation → Grid Search → ROC-AUC / F1**
+
+These will immediately improve your model quality.
+
+### Your Day 5 target
+
+By the end of today, you should be able to answer:
+
+> **"How do I know if my model is actually good? How do I tune it without overfitting?"**
+
+Answer: **Proper validation + systematic hyperparameter tuning.**
+
+---
+
+Need the **Day 5 coding checklist** too? 🎯
