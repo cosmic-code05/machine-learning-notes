@@ -4,7 +4,7 @@ Supervised Learning is a type of Machine Learning where models learn from labele
 
 Key Characteristic: Training Data contains both features (inputs) and labels (outputs)
 
-Supervised Learning Workflow
+Supervised Learning Workflow.
 
 1. Collect labeled data
 2. Split data into training (70-80%) and testing (20-30%) sets
