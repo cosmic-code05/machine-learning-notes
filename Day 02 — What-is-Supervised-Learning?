@@ -169,7 +169,6 @@ Key Takeaway
 Supervised Learning is powerful for both classification and regression tasks. Success depends on having quality labeled data, choosing the appropriate algorithm for your problem, and properly evaluating your model. Start simple, measure performance, and increase complexity only when needed.
 
 Quick Reference: Algorithm Decision Tree
-
 Start here: What's your problem?
 ├── Classification (discrete output)
 │   ├── Binary classification?
