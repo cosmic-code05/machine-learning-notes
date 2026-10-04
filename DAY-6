@@ -1,0 +1,60 @@
+Day 6 — Feature Engineering & Data Preprocessing
+Day 6 — What you need to learn
+1. Missing Data Handling ⭐
+- Detecting missing values
+- Mean / Median / Mode imputation
+- Forward & backward fill
+- KNN Imputation
+- When not to impute
+2. Categorical Variables ⭐
+- Label Encoding
+- One-Hot Encoding
+- Ordinal Encoding
+- Target Encoding
+- Handling unseen categories
+3. Feature Scaling ⭐
+- Standardization (StandardScaler)
+- Min-Max Scaling
+- Robust Scaling
+- When scaling is necessary vs unnecessary
+4. Feature Engineering ⭐
+- Creating new features
+- Numerical transformations
+- Log transformation
+- Binning
+- Date/time features
+- Interaction features
+5. Feature Selection
+- Correlation-based selection
+- Variance Threshold
+- SelectKBest
+- RFE
+- Feature importance
+- Avoiding redundant features
+6. Data Leakage ⭐
+- What is data leakage?
+- Leakage during preprocessing
+- Leakage during feature engineering
+- Why preprocessing must happen inside the CV pipeline
+Practical
+Today, focus on:
+Missing Values → Encoding → Scaling → Feature Engineering → Data Leakage
+
+Day 6 target
+By the end of today, you should be able to answer:
+"How do I convert messy real-world data into features that an ML model can actually learn from?"
+
+Answer:
+Clean → Transform → Engineer → Select → Prevent Leakage → Train.
+Coding checklist
+- [ ] Load a messy dataset
+- [ ] Identify missing values
+- [ ] Handle numerical + categorical missing data
+- [ ] Encode categorical features
+- [ ] Scale numerical features
+- [ ] Create 2–3 meaningful new features
+- [ ] Compare model performance before/after feature engineering
+- [ ] Build a Pipeline + ColumnTransformer
+- [ ] Verify that no preprocessing leakage occurs
+- [ ] Commit the notebook to GitHub
+⭐ Priority: If you're short on time, master Pipeline + ColumnTransformer + encoding + scaling + data leakage.
