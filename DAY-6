@@ -1,5 +1,5 @@
 Day 6 — Feature Engineering & Data Preprocessing
-Day 6 — What you need to learn
+
 1. Missing Data Handling ⭐
 - Detecting missing values
 - Mean / Median / Mode imputation
@@ -40,21 +40,3 @@ Practical
 Today, focus on:
 Missing Values → Encoding → Scaling → Feature Engineering → Data Leakage
 
-Day 6 target
-By the end of today, you should be able to answer:
-"How do I convert messy real-world data into features that an ML model can actually learn from?"
-
-Answer:
-Clean → Transform → Engineer → Select → Prevent Leakage → Train.
-Coding checklist
-- [ ] Load a messy dataset
-- [ ] Identify missing values
-- [ ] Handle numerical + categorical missing data
-- [ ] Encode categorical features
-- [ ] Scale numerical features
-- [ ] Create 2–3 meaningful new features
-- [ ] Compare model performance before/after feature engineering
-- [ ] Build a Pipeline + ColumnTransformer
-- [ ] Verify that no preprocessing leakage occurs
-- [ ] Commit the notebook to GitHub
-⭐ Priority: If you're short on time, master Pipeline + ColumnTransformer + encoding + scaling + data leakage.
