@@ -6,17 +6,20 @@ Day 6 — Feature Engineering & Data Preprocessing
 - Forward & backward fill
 - KNN Imputation
 - When not to impute
+
 2. Categorical Variables ⭐
 - Label Encoding
 - One-Hot Encoding
 - Ordinal Encoding
 - Target Encoding
 - Handling unseen categories
+
 3. Feature Scaling ⭐
 - Standardization (StandardScaler)
 - Min-Max Scaling
 - Robust Scaling
 - When scaling is necessary vs unnecessary
+
 4. Feature Engineering ⭐
 - Creating new features
 - Numerical transformations
@@ -24,6 +27,7 @@ Day 6 — Feature Engineering & Data Preprocessing
 - Binning
 - Date/time features
 - Interaction features
+
 5. Feature Selection
 - Correlation-based selection
 - Variance Threshold
@@ -31,6 +35,7 @@ Day 6 — Feature Engineering & Data Preprocessing
 - RFE
 - Feature importance
 - Avoiding redundant features
+
 6. Data Leakage ⭐
 - What is data leakage?
 - Leakage during preprocessing
