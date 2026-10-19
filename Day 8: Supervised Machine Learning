@@ -1,1 +1,185 @@
+##Day 8: Supervised Machine Learning: Tree-Based Models, KNN, SVM & Ensembles##
 
+1. Decision Trees
+
+Idea: Split the data with a series of if/else questions on features until each group (leaf) is mostly one class (or has similar values).
+
+Key terms: root node, internal node, branch, leaf node, depth.
+
+How the best split is chosen
+
+Gini impurity: Gini = 1 − Σ pᵢ² (0 = pure node). This is the default in scikit-learn.
+Entropy: H = − Σ pᵢ log₂(pᵢ)
+Information gain: the drop in impurity after a split. The tree picks the split with the highest gain.
+Regression trees: split to minimize MSE (or variance) in each child, and predict the mean of the leaf.
+
+Strengths: easy to interpret and visualize, needs no feature scaling, handles numerical and categorical data, and captures non-linear relationships.
+
+Weaknesses: overfits very easily (an unrestricted tree memorizes the training data) and is unstable (small data changes can give a very different tree).
+
+Controlling overfitting (pruning)
+
+max_depth
+min_samples_split
+min_samples_leaf
+max_leaf_nodes
+ccp_alpha (cost-complexity pruning)
+2. Ensemble Learning
+
+Core idea: Many weak or moderate models combined give a better, more stable model than one model alone.
+
+Bagging (Bootstrap Aggregating)
+Train many models on random bootstrap samples (sampling with replacement).
+Average the predictions (regression) or take a majority vote (classification).
+Reduces variance.
+Random Forest
+Bagging of decision trees, plus random feature selection at each split, so the trees are less correlated.
+Important parameters: n_estimators, max_depth, max_features, min_samples_leaf.
+Feature importance (feature_importances_) shows which features matter most.
+OOB (out-of-bag) score is a free validation estimate from the samples each tree didn’t see (oob_score=True).
+Boosting
+Train models sequentially, each one correcting the errors of the previous one.
+Reduces bias (and some variance).
+AdaBoost: increases the weight of misclassified samples.
+Gradient Boosting: each new tree fits the residual errors (the gradient of the loss).
+XGBoost / LightGBM / CatBoost: fast, regularized, widely used on tabular data (introduction only today).
+Key parameters: n_estimators, learning_rate, max_depth. Lower learning rate needs more trees.
+	Bagging / Random Forest	Boosting
+Training	Parallel	Sequential
+Main goal	Reduce variance	Reduce bias
+Overfitting risk	Lower	Higher (needs tuning)
+Sensitivity to noise	Low	Higher
+3. K-Nearest Neighbors (KNN)
+Lazy learner: no real training. It stores the data and predicts by looking at the k closest points.
+Classification: majority vote of the neighbors. Regression: average of the neighbors.
+Distance metrics: Euclidean (default), Manhattan, Minkowski.
+Choosing k:
+Small k → low bias, high variance (overfitting)
+Large k → high bias, low variance (underfitting)
+Pick k using cross-validation (odd values avoid ties in binary problems)
+Feature scaling is mandatory (use StandardScaler or MinMaxScaler), since distances are scale-sensitive.
+Limitations: slow on large datasets at prediction time, and poor in high dimensions (the curse of dimensionality).
+4. Support Vector Machines (SVM)
+Finds the hyperplane that separates classes with the maximum margin.
+Support vectors: the points closest to the boundary. Only these define it.
+Hard margin vs soft margin: real data is noisy, so we allow some misclassification.
+Parameter C:
+Large C → narrow margin, fewer errors, risk of overfitting
+Small C → wider margin, more errors allowed, risk of underfitting
+Kernel trick: handle non-linear data by implicitly mapping it to a higher dimension.
+linear, poly, rbf (most common), sigmoid
+Parameter gamma (RBF): high gamma → very local, wiggly boundary (overfits). Low gamma → smoother boundary.
+Scaling is required. SVR is the regression version.
+5. Naive Bayes
+Based on Bayes’ theorem: P(class | features) ∝ P(class) × Π P(featureᵢ | class)
+“Naive” because it assumes features are independent given the class.
+Variants: GaussianNB (continuous features), MultinomialNB (word counts, text), BernoulliNB (binary features).
+Very fast, works well on small datasets and text classification (e.g., spam detection).
+Laplace smoothing (alpha) avoids zero probabilities.
+6. Hyperparameter Tuning
+Parameters are learned from data (e.g., regression coefficients, tree splits). Hyperparameters are set by you before training (e.g., max_depth, k, C).
+GridSearchCV: tries every combination in a grid, with cross-validation. It is exhaustive but slow.
+RandomizedSearchCV: samples random combinations. It is faster and often nearly as good.
+Pipelines (Pipeline) chain preprocessing and model, so scaling is fitted only on training folds. This prevents data leakage.
+Tune using CV on the training set. Touch the test set only once, at the end.
+7. Choosing a Model
+Model	Needs scaling?	Interpretable?	Handles non-linearity?	Typical use
+Linear / Logistic Regression	Yes (esp. regularized)	High	No	Baseline, simple relationships
+Decision Tree	No	High	Yes	Explainable rules
+Random Forest	No	Medium	Yes	Strong general-purpose model
+Gradient Boosting / XGBoost	No	Low	Yes	Best accuracy on tabular data
+KNN	Yes	Medium	Yes	Small datasets, quick baseline
+SVM	Yes	Low	Yes (kernels)	Medium-sized, high-dimensional data
+Naive Bayes	No	Medium	Limited	Text, fast baseline
+
+Rule of thumb: Start with a simple baseline, then try Random Forest or Gradient Boosting, and compare with cross-validation.
+
+8. Practical Implementation
+python
+import pandas as pd
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import classification_report, confusion_matrix
+
+# 1. Load data and split (stratify keeps class proportions)
+X, y = load_breast_cancer(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=42
+)
+
+# 2. Define models (scale-sensitive ones go in a pipeline)
+models = {
+    "Decision Tree": DecisionTreeClassifier(max_depth=4, random_state=42),
+    "Random Forest": RandomForestClassifier(n_estimators=200, random_state=42),
+    "Gradient Boosting": GradientBoostingClassifier(random_state=42),
+    "KNN": Pipeline([("scale", StandardScaler()), ("knn", KNeighborsClassifier(n_neighbors=5))]),
+    "SVM (RBF)": Pipeline([("scale", StandardScaler()), ("svm", SVC(kernel="rbf", C=1.0))]),
+    "Naive Bayes": GaussianNB(),
+}
+
+# 3. Compare train/test scores and 5-fold CV
+results = []
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    cv = cross_val_score(model, X_train, y_train, cv=5, scoring="f1")
+    results.append({
+        "Model": name,
+        "Train Acc": model.score(X_train, y_train),
+        "Test Acc": model.score(X_test, y_test),
+        "CV F1 (mean)": cv.mean(),
+        "CV F1 (std)": cv.std(),
+    })
+print(pd.DataFrame(results).round(3).sort_values("CV F1 (mean)", ascending=False))
+
+# 4. Hyperparameter tuning with GridSearchCV
+param_grid = {
+    "n_estimators": [100, 200],
+    "max_depth": [None, 5, 10],
+    "min_samples_leaf": [1, 3, 5],
+}
+grid = GridSearchCV(RandomForestClassifier(random_state=42),
+                    param_grid, cv=5, scoring="f1", n_jobs=-1)
+grid.fit(X_train, y_train)
+print("Best params:", grid.best_params_)
+
+# 5. Final evaluation on the untouched test set
+best = grid.best_estimator_
+y_pred = best.predict(X_test)
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+
+# 6. Feature importance
+importances = pd.Series(best.feature_importances_,
+                        index=load_breast_cancer().feature_names)
+print(importances.sort_values(ascending=False).head(5))
+
+What to observe
+
+An unrestricted Decision Tree has train accuracy near 100% but a lower test score. This is overfitting.
+Random Forest usually closes that gap.
+KNN and SVM perform poorly without scaling, so try removing the scaler and compare.
+Practical Priority
+Decision Trees and overfitting control
+Random Forest and feature importance
+Gradient Boosting (concept plus GradientBoostingClassifier)
+KNN and SVM (with scaling)
+GridSearchCV and Pipelines
+Naive Bayes (lower priority, know the concept)
+Quick Revision Questions
+Why does an unpruned decision tree overfit, and how do you prevent it?
+How does Random Forest differ from a single tree and from boosting?
+Why must KNN and SVM use feature scaling, but trees don’t?
+What do C and gamma control in an RBF SVM?
+Why should scaling be done inside a Pipeline during cross-validation?
+When would you pick GridSearchCV over RandomizedSearchCV?
+Homework
+Train a Decision Tree with max_depth from 1 to 20 and plot train vs test accuracy. Mark where overfitting begins.
+Find the best k for KNN using cross-validation, and plot accuracy vs k.
+Compare at least 4 models on a dataset of your choice using cross-validated F1, and write 3–4 lines on which you’d deploy and why.
