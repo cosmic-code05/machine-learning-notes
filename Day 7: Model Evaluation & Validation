@@ -1,0 +1,35 @@
+Day 7: Model Evaluation & Validation
+
+1. Regression Metrics ⭐
+
+MAE, MSE, RMSE
+R² and Adjusted R²
+When to use which metric
+
+2. Classification Metrics ⭐
+
+Accuracy and its limits
+Precision, Recall, F1-score
+Confusion Matrix
+ROC-AUC vs PR-AUC
+Choosing metrics by business problem
+
+3. Cross-Validation ⭐
+
+Train/Validation/Test split
+K-Fold and Stratified K-Fold
+Time-series split
+Leave-One-Out
+
+4. Bias-Variance Tradeoff ⭐
+
+Underfitting vs Overfitting
+Learning curves
+Diagnosing high bias / high variance
+
+5. Regularization
+
+L1 (Lasso), L2 (Ridge), ElasticNet
+How regularization reduces overfitting
+
+Practical: Train a model → compute metrics → run stratified CV → plot a learning curve
