@@ -1,0 +1,34 @@
+Day 9: Imbalanced Data, Interpretability & Pipelines
+
+1. Imbalanced Data ⭐
+
+Why accuracy fails
+Class weights
+Oversampling (SMOTE) and Undersampling
+Threshold tuning
+Resample only inside the CV fold (avoid leakage)
+
+2. Model Interpretability ⭐
+
+Feature importance
+Permutation importance
+SHAP values
+Partial dependence plots
+
+3. sklearn Pipelines ⭐
+
+Pipeline and ColumnTransformer
+Combining preprocessing and model
+Using pipelines with GridSearchCV
+
+4. Model Saving & Deployment Basics
+
+Saving with joblib / pickle
+Loading and predicting on new data
+Intro to serving (FastAPI / Streamlit)
+
+5. Common Mistakes
+
+Leakage, wrong metric, no baseline, tuning on the test set
+
+Practical: Imbalanced dataset → SMOTE in a pipeline → tune → explain with SHAP → save the model
