@@ -1,0 +1,33 @@
+Day 8: Ensemble Methods & Hyperparameter Tuning
+
+1. Bagging ⭐
+
+Bootstrap sampling
+Random Forest
+Out-of-bag (OOB) score
+
+2. Boosting ⭐
+
+AdaBoost
+Gradient Boosting
+XGBoost / LightGBM / CatBoost
+Bagging vs Boosting
+
+3. Stacking & Voting
+
+Hard vs Soft voting
+Stacking with a meta-learner
+
+4. Hyperparameter Tuning ⭐
+
+Grid Search
+Random Search
+Bayesian Optimization (Optuna)
+Key parameters: depth, learning rate, n_estimators
+
+5. Early Stopping & Overfitting Control
+
+Early stopping
+Regularization in boosting
+
+Practical: Random Forest vs XGBoost → tune with RandomizedSearchCV → compare scores
