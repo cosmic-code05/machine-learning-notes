@@ -2,7 +2,6 @@
 
 Gradient boosting is the industry standard for tabular data. It builds on Day 9: it handles imbalance, fits inside pipelines, and works with SHAP.
 
-<br>
 📑 Contents
 Boosting Theory
 XGBoost vs LightGBM vs CatBoost
@@ -13,7 +12,8 @@ Probability Calibration
 Common Mistakes
 Practical Project
 Cheat Sheet
-<br>
+
+
 1. 🌱 Boosting Theory
 Bagging vs Boosting
 	Bagging (Random Forest)	Boosting
@@ -21,13 +21,13 @@ How trees are built	In parallel	One after another
 Main goal	Reduce variance	Reduce bias
 Trees used	Deep	Shallow (depth 3-8)
 Overfitting risk	Low	Higher
-<br>
+
 AdaBoost (the intuition)
 Give every sample an equal weight.
 Train a weak learner.
 Increase the weight of misclassified samples.
 The next learner focuses on those hard cases.
-<br>
+
 Gradient Boosting
 
 Each new tree is added to the previous model, scaled by the learning rate η:
@@ -42,7 +42,7 @@ Classification (log loss): residual = y - predicted probability
 
 [!TIP] Think of it as "fix the mistakes of the previous trees, a little at a time."
 
-<br>
+
 The algorithm
 Start with a constant (mean, or log-odds for classification).
 Compute residuals.
@@ -58,7 +58,7 @@ subsample: row sampling per tree, which reduces variance
 
 [!IMPORTANT] learning_rate and n_estimators are coupled. Use a low rate (0.01-0.1) and let early stopping pick the number of trees.
 
-<br>
+
 2. ⚔️ XGBoost vs LightGBM vs CatBoost
 XGBoost
 Regularized objective with second-order gradients
@@ -72,14 +72,14 @@ CatBoost
 Ordered boosting to reduce target leakage
 Best native categorical handling
 Strong defaults, so little tuning is needed
-<br>
+
 Which one to pick?
 Situation	Choose
 Safe general benchmark	XGBoost
 Huge dataset, need speed	LightGBM
 Many categorical columns	CatBoost
 No time to tune	CatBoost
-<br>
+
 sklearn-compatible API
 python
 from xgboost import XGBClassifier
@@ -92,7 +92,7 @@ cat  = CatBoostClassifier(iterations=500, learning_rate=0.05, depth=6, verbose=0
 
 They all support fit, predict, and predict_proba, so they work with Pipeline, GridSearchCV, and SHAP.
 
-<br>
+
 3. 🌍 Real-World Issues
 Missing values
 
