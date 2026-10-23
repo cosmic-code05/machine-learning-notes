@@ -1,1 +1,387 @@
+🚀 Day 10: Gradient Boosting, Tuning & Calibration
 
+Gradient boosting is the industry standard for tabular data. It builds on Day 9: it handles imbalance, fits inside pipelines, and works with SHAP.
+
+<br>
+📑 Contents
+Boosting Theory
+XGBoost vs LightGBM vs CatBoost
+Real-World Issues
+Regularization & Early Stopping
+Hyperparameter Tuning
+Probability Calibration
+Common Mistakes
+Practical Project
+Cheat Sheet
+<br>
+1. 🌱 Boosting Theory
+Bagging vs Boosting
+	Bagging (Random Forest)	Boosting
+How trees are built	In parallel	One after another
+Main goal	Reduce variance	Reduce bias
+Trees used	Deep	Shallow (depth 3-8)
+Overfitting risk	Low	Higher
+<br>
+AdaBoost (the intuition)
+Give every sample an equal weight.
+Train a weak learner.
+Increase the weight of misclassified samples.
+The next learner focuses on those hard cases.
+<br>
+Gradient Boosting
+
+Each new tree is added to the previous model, scaled by the learning rate η:
+
+F_m(x) = F_(m-1)(x) + η · h_m(x)
+
+The new tree h_m is trained on the residuals, the negative gradient of the loss:
+
+r = - ∂L / ∂F
+Regression (squared error): residual = y - prediction
+Classification (log loss): residual = y - predicted probability
+
+[!TIP] Think of it as "fix the mistakes of the previous trees, a little at a time."
+
+<br>
+The algorithm
+Start with a constant (mean, or log-odds for classification).
+Compute residuals.
+Fit a small tree to them.
+Add it to the model, scaled by η.
+Repeat.
+<br>
+Key knobs
+learning_rate: smaller is safer but needs more trees
+n_estimators: more trees lower bias but can overfit
+max_depth: controls model complexity
+subsample: row sampling per tree, which reduces variance
+
+[!IMPORTANT] learning_rate and n_estimators are coupled. Use a low rate (0.01-0.1) and let early stopping pick the number of trees.
+
+<br>
+2. ⚔️ XGBoost vs LightGBM vs CatBoost
+XGBoost
+Regularized objective with second-order gradients
+Learns a default direction for missing values
+Stable, reliable, the benchmark standard
+LightGBM
+Histogram binning, so it is very fast
+Leaf-wise tree growth, which can overfit small data
+Main parameter to watch: num_leaves
+CatBoost
+Ordered boosting to reduce target leakage
+Best native categorical handling
+Strong defaults, so little tuning is needed
+<br>
+Which one to pick?
+Situation	Choose
+Safe general benchmark	XGBoost
+Huge dataset, need speed	LightGBM
+Many categorical columns	CatBoost
+No time to tune	CatBoost
+<br>
+sklearn-compatible API
+python
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
+from catboost import CatBoostClassifier
+
+xgb  = XGBClassifier(n_estimators=500, learning_rate=0.05, max_depth=4)
+lgbm = LGBMClassifier(n_estimators=500, learning_rate=0.05, num_leaves=31, verbose=-1)
+cat  = CatBoostClassifier(iterations=500, learning_rate=0.05, depth=6, verbose=0)
+
+They all support fit, predict, and predict_proba, so they work with Pipeline, GridSearchCV, and SHAP.
+
+<br>
+3. 🌍 Real-World Issues
+Missing values
+
+All three libraries handle NaN natively, so imputation is optional. Sometimes it even helps, because "missing" can be a useful signal.
+
+<br>
+Imbalanced data
+Library	Parameter
+XGBoost	scale_pos_weight = n_neg / n_pos
+LightGBM	is_unbalance=True or scale_pos_weight
+CatBoost	auto_class_weights="Balanced"
+python
+ratio = (y_train == 0).sum() / (y_train == 1).sum()
+model = XGBClassifier(scale_pos_weight=ratio)
+
+[!NOTE] SMOTE and class weights both distort predicted probabilities. If you need real probabilities, calibrate (see Section 6).
+
+<br>
+Categorical features
+Label/ordinal encoding works fine for trees.
+Avoid one-hot on high-cardinality columns.
+Native support:
+LightGBM: category dtype
+CatBoost: cat_features=[...]
+XGBoost: enable_categorical=True
+<br>
+Monotonic constraints
+
+Force the prediction to only go up (or only down) as a feature increases. Very useful in credit and risk models. For example, higher income should never increase default risk.
+
+python
+# 1 = increasing, -1 = decreasing, 0 = no constraint
+XGBClassifier(monotone_constraints=(1, -1, 0))
+<br>
+Boosters inside a Day 9 pipeline
+python
+from imblearn.pipeline import Pipeline      # use the imblearn Pipeline with SMOTE
+from imblearn.over_sampling import SMOTE
+
+pipe = Pipeline([
+    ("prep",  preprocess),                  # your ColumnTransformer
+    ("smote", SMOTE(random_state=42)),      # runs only on training folds
+    ("model", XGBClassifier()),
+])
+<br>
+4. 🛡️ Regularization & Early Stopping
+Regularization parameters
+Parameter	What it does
+max_depth	Limits tree complexity
+min_child_weight	Larger value gives a more conservative split
+gamma	Minimum loss reduction required to split
+reg_lambda	L2 penalty on leaf weights
+reg_alpha	L1 penalty on leaf weights
+subsample	Fraction of rows per tree
+colsample_bytree	Fraction of features per tree
+
+<sub>LightGBM names: num_leaves, min_child_samples, lambda_l2, lambda_l1, bagging_fraction, feature_fraction</sub>
+
+<br>
+Early stopping
+
+Stop adding trees when the validation score stops improving.
+
+python
+model = XGBClassifier(
+    n_estimators=5000,            # set high, let early stopping decide
+    learning_rate=0.03,
+    eval_metric="aucpr",
+    early_stopping_rounds=50,
+)
+
+model.fit(X_tr, y_tr, eval_set=[(X_val, y_val)], verbose=False)
+print(model.best_iteration)
+
+[!WARNING] Never early-stop on the test set. That is leakage.
+
+[!NOTE] Inside a pipeline, the validation set must be transformed by the already-fitted preprocessor first. Do not apply SMOTE to the validation set.
+
+<br>
+Reading learning curves
+Train and validation both bad → underfitting. Add depth or trees, or reduce regularization.
+Train great, validation worsens → overfitting. Reduce depth, add regularization, use subsampling.
+Validation still improving at the end → you need more trees.
+<br>
+5. 🎯 Hyperparameter Tuning
+Why GridSearch does not scale
+
+5 parameters x 5 values = 3,125 combinations, each multiplied by the CV folds. Most of that effort is wasted.
+
+<br>
+RandomizedSearchCV
+
+Samples random combinations, which is usually just as good with far fewer runs.
+
+python
+from sklearn.model_selection import RandomizedSearchCV
+from scipy.stats import randint, uniform, loguniform
+
+param_dist = {
+    "model__n_estimators":     randint(200, 800),
+    "model__learning_rate":    loguniform(0.01, 0.3),
+    "model__max_depth":        randint(3, 9),
+    "model__subsample":        uniform(0.6, 0.4),
+    "model__colsample_bytree": uniform(0.5, 0.5),
+}
+
+search = RandomizedSearchCV(pipe, param_dist, n_iter=50,
+                            scoring="average_precision", cv=5, n_jobs=-1)
+search.fit(X_train, y_train)
+<br>
+Optuna (Bayesian optimization)
+Learns which regions of the search space score well, then samples there
+Pruning stops bad trials early
+You define the search space with trial.suggest_*
+<details> <summary><b>Click to expand: full Optuna example</b></summary> <br>
+python
+import optuna
+from sklearn.model_selection import cross_val_score, StratifiedKFold
+
+def objective(trial):
+    params = {
+        "n_estimators":     trial.suggest_int("n_estimators", 200, 1000),
+        "learning_rate":    trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+        "max_depth":        trial.suggest_int("max_depth", 3, 9),
+        "min_child_weight": trial.suggest_int("min_child_weight", 1, 10),
+        "subsample":        trial.suggest_float("subsample", 0.6, 1.0),
+        "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+        "reg_lambda":       trial.suggest_float("reg_lambda", 1e-2, 10, log=True),
+    }
+
+    pipe = Pipeline([
+        ("prep",  preprocess),
+        ("smote", SMOTE(random_state=42)),
+        ("model", XGBClassifier(**params, random_state=42)),
+    ])
+
+    cv = StratifiedKFold(5, shuffle=True, random_state=42)
+    return cross_val_score(pipe, X_train, y_train, cv=cv,
+                           scoring="average_precision").mean()
+
+study = optuna.create_study(direction="maximize")
+study.optimize(objective, n_trials=60)
+
+print(study.best_params)
+print(study.best_value)
+</details> <br>
+Sensible tuning order
+Fix learning_rate (about 0.1) and find the number of trees with early stopping
+Tune tree structure: max_depth, min_child_weight
+Tune sampling: subsample, colsample_bytree
+Tune regularization: reg_lambda, reg_alpha, gamma
+Lower the learning rate and increase the trees for the final model
+<br>
+Nested CV (honest performance estimate)
+
+Tuning and reporting on the same folds gives an optimistic score.
+
+Inner loop: hyperparameter search
+Outer loop: scores the whole tuning procedure
+python
+inner = StratifiedKFold(3, shuffle=True, random_state=1)
+outer = StratifiedKFold(5, shuffle=True, random_state=2)
+
+search = RandomizedSearchCV(pipe, param_dist, n_iter=20, cv=inner,
+                            scoring="average_precision")
+scores = cross_val_score(search, X_train, y_train, cv=outer,
+                         scoring="average_precision")
+print(scores.mean(), scores.std())
+
+[!TIP] Nested CV is expensive. Use it for the final model comparison, not every experiment.
+
+<br>
+6. 📊 Probability Calibration
+The problem
+
+A model can rank well (high ROC-AUC) but output probabilities that mean nothing. If it says 0.8, then about 80% of those cases should truly be positive.
+
+Why it matters: risk scoring, expected-cost decisions, threshold tuning, and explaining results to stakeholders.
+
+<br>
+Who is usually miscalibrated?
+✅ Logistic regression: usually well calibrated
+⚠️ Random forest: under-confident near 0 and 1
+⚠️ Boosted trees: often distorted, especially with SMOTE or class weights
+❌ SVM and Naive Bayes: typically poor
+<br>
+Calibration curve (reliability diagram)
+
+Bin the predictions, then plot predicted probability against the actual fraction of positives. The diagonal is perfect calibration.
+
+python
+from sklearn.calibration import calibration_curve
+import matplotlib.pyplot as plt
+
+frac_pos, mean_pred = calibration_curve(y_val, p_val, n_bins=10, strategy="quantile")
+
+plt.plot(mean_pred, frac_pos, marker="o", label="model")
+plt.plot([0, 1], [0, 1], "--", label="perfect")
+plt.legend(); plt.show()
+<br>
+Brier score
+
+Mean squared error of the probabilities. Lower is better.
+
+Brier = mean( (p - y)² )
+python
+from sklearn.metrics import brier_score_loss
+brier_score_loss(y_val, p_val)
+<br>
+Two calibration methods
+
+Platt scaling (method="sigmoid")
+
+Fits a logistic regression on the model's scores
+Best for small data
+
+Isotonic regression (method="isotonic")
+
+Flexible, non-parametric
+Best for larger data (roughly 1000+ samples), can overfit on small data
+<br>
+CalibratedClassifierCV
+python
+from sklearn.calibration import CalibratedClassifierCV
+
+cal = CalibratedClassifierCV(best_model, method="isotonic", cv=5)
+cal.fit(X_train, y_train)
+
+p_cal = cal.predict_proba(X_test)[:, 1]
+
+[!IMPORTANT]
+
+Calibrate on data the model has not been trained on
+Calibration changes probabilities, not the ranking, so ROC-AUC barely moves but Brier improves
+Calibrate before tuning the decision threshold
+<br>
+7. ⚠️ Common Mistakes
+❌ Mistake	✅ Fix
+Tuning learning_rate and n_estimators separately	Fix the rate, early-stop for trees, lower the rate at the end
+Early stopping on the test set	Use a validation split
+Using default max_depth blindly	Tune depth or leaves first
+Trusting raw predict_proba	Check the reliability curve and calibrate
+Unequal tuning effort between models	Same CV and same trial budget
+Skipping the logistic regression baseline	Always benchmark simple first
+Using accuracy on imbalanced data	Use PR-AUC, recall, or F-beta
+SMOTE before the train/validation split	SMOTE only inside the training fold
+is_unbalance and scale_pos_weight together	Use only one
+<br>
+8. 🧪 Practical Project
+
+Dataset: the Day 9 imbalanced dataset (fraud, churn, or loan default).
+
+Steps
+Benchmark logistic regression, random forest, XGBoost, and LightGBM using the same CV and metric (PR-AUC)
+Tune the best one with Optuna and early stopping
+Compare SMOTE vs scale_pos_weight vs nothing. Which wins, and why?
+Calibrate with sigmoid and isotonic. Plot calibration curves before and after, and report the Brier score
+Tune the threshold on calibrated validation probabilities, then evaluate once on the test set
+Explain with SHAP and compare with Day 9 and permutation importance
+<br>
+Results table (fill in as you go)
+Model	PR-AUC	Recall	Brier
+Dummy baseline			
+Logistic Regression			
+Random Forest			
+XGBoost (default)			
+LightGBM (default)			
+XGBoost (tuned)			
+XGBoost (tuned + calibrated)			
+<br>
+SHAP for boosted trees
+python
+import shap
+
+explainer   = shap.TreeExplainer(final_xgb)
+shap_values = explainer(X_test_transformed)
+
+shap.plots.beeswarm(shap_values)        # global importance
+shap.plots.waterfall(shap_values[0])    # one prediction
+<br>
+9. 📝 Cheat Sheet
+Boosting = sequential trees fitting the negative gradient
+Update rule: F_m = F_(m-1) + η · h_m
+Recipe: low learning rate + many trees + early stopping
+XGBoost = reliable · LightGBM = fast · CatBoost = best with categoricals
+Imbalance: scale_pos_weight = neg / pos, or SMOTE inside the fold
+Tuning order: trees → structure → sampling → regularization → lower LR
+Random search beats grid, Optuna beats random, nested CV gives the honest score
+Good AUC does not mean good probabilities. Check the calibration curve
+Calibrate on unseen data, then tune the threshold
+Never tune or early-stop on the test set, and always keep a baseline
+<br>
