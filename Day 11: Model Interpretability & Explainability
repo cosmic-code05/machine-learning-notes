@@ -1,1 +1,282 @@
+1. Cheat Sheet
+1. 🌱 Why Interpretability
+A model that scores well can still be wrong for the wrong reasons. Explanations help you:
+• Debug: find leakage, spurious features and data bugs
+• Trust: stakeholders accept models they can question
+• Comply: credit, health and hiring decisions often need reasons (adverse action notices, GDPR-style rights)
+• Improve: errors point to missing features
+• Detect bias: see whether a sensitive feature, or a proxy for it, drives predictions
+TIP: If a feature you did not expect is the top driver, suspect leakage before you celebrate.
+2. 🧭 Global vs Local, Intrinsic vs Post-hoc
 
+Global
+Local
+Question
+What does the model rely on overall?
+Why this one prediction?
+Tools
+Permutation importance, PDP, SHAP beeswarm
+SHAP waterfall, LIME, ICE, counterfactuals
+
+Intrinsic
+Post-hoc
+Idea
+Model is readable by design
+Explain a trained black box afterwards
+Examples
+Linear/logistic regression, small trees, GAMs
+SHAP, LIME, PDP, surrogates
+NOTE: Post-hoc methods explain the model, not the real world. A feature being important to the model does not mean it causes the outcome.
+3. 📏 Feature Importance (and its traps)
+Built-in importance (tree models)
+• gain: average loss reduction from splits on the feature (most useful)
+• weight / split: how often it is used (misleading)
+• cover: samples affected by its splits
+Trap: built-in importance is computed on training data and is biased toward high-cardinality and continuous features.
+Permutation importance
+Shuffle one feature on held-out data and measure how much the score drops. Model-agnostic and computed on data the model has not seen.
+from sklearn.inspection import permutation_importance
+
+r = permutation_importance(pipe, X_val, y_val, n_repeats=10,
+                           scoring="average_precision", random_state=42)
+
+for i in r.importances_mean.argsort()[::-1][:10]:
+    print(X_val.columns[i], r.importances_mean[i], r.importances_std[i])
+WARNING: With correlated features, shuffling one leaves its twin to fill in, so both look unimportant. Group correlated features, or drop one, before reading results.
+Method
+Data
+Pros
+Cons
+Built-in gain
+Train
+Free, fast
+Biased, train-only
+Permutation
+Validation
+Model-agnostic, honest
+Slow, correlation issues
+SHAP mean abs
+Any
+Local + global, consistent
+Slower, also affected by correlation
+4. 📈 PDP, ICE and ALE
+Partial Dependence Plot (PDP)
+Shows the average prediction as one feature varies while all others keep their observed values.
+ICE (Individual Conditional Expectation)
+One line per sample. If the lines disagree, the PDP average is hiding an interaction.
+from sklearn.inspection import PartialDependenceDisplay
+
+PartialDependenceDisplay.from_estimator(
+    model, X_val, features=["income", "age"],
+    kind="both",            # "average" = PDP, "individual" = ICE, "both" = overlay
+    subsample=200, grid_resolution=30)
+ALE (Accumulated Local Effects)
+Like PDP but robust to correlated features, because it only uses realistic nearby values. Libraries: alibi, PyALE.
+WARNING: PDP assumes features are independent. With correlated features it evaluates impossible combinations (e.g. age 5 with 20 years of experience). Prefer ALE then.
+The PDP also connects to Day 10: it lets you check that a monotonic constraint behaves as intended.
+5. 🎲 SHAP Deep Dive
+The idea
+Shapley values come from game theory. Each feature is a "player", the prediction is the "payout", and a feature's SHAP value is its average marginal contribution across all feature orderings.
+prediction = base_value + sum(SHAP values of all features)
+This is additivity: the contributions always sum exactly to the gap between the prediction and the average prediction.
+Explainers
+Explainer
+For
+Speed
+TreeExplainer
+XGBoost, LightGBM, CatBoost, RF
+Fast, exact
+LinearExplainer
+Linear models
+Fast
+KernelExplainer
+Any model
+Very slow
+Explainer (auto)
+Picks a suitable one
+Varies
+Units matter
+• TreeExplainer on a classifier explains the log-odds (margin), not the probability.
+• Positive SHAP raises the log-odds of the positive class, negative lowers it.
+• Calibration (Day 10) changes the probability output, but SHAP on the raw model explains the uncalibrated margin. Mention this when reporting.
+Plots
+import shap
+
+explainer   = shap.TreeExplainer(final_xgb)
+shap_values = explainer(X_test_transformed)       # needs transformed data
+
+shap.plots.bar(shap_values)               # global: mean |SHAP|
+shap.plots.beeswarm(shap_values)          # global: size + direction
+shap.plots.waterfall(shap_values[0])      # local: one prediction
+shap.plots.scatter(shap_values[:, "income"],
+                   color=shap_values)     # dependence + auto interaction
+Reading a beeswarm
+• Vertical order: importance (top is most important)
+• X position: impact on the prediction (right pushes up)
+• Colour: feature value (red high, blue low)
+• Red dots on the right means a high value pushes the prediction up
+SHAP interaction values
+inter = explainer.shap_interaction_values(X_sample)   # shape (n, f, f)
+Separates each feature's main effect from pairwise interaction effects. Costly: use a sample.
+IMPORTANT: SHAP explains model behaviour, not causality. And with correlated features, credit is split between them arbitrarily, so rankings can be unstable.
+6. 🍋 LIME
+LIME explains one prediction by:
+1. Perturbing the sample to create nearby fake samples
+2. Getting the black-box predictions for them
+3. Fitting a small weighted linear model around the point
+4. Reading that model's coefficients as the explanation
+from lime.lime_tabular import LimeTabularExplainer
+
+exp = LimeTabularExplainer(X_train_arr, feature_names=cols,
+                           class_names=["no", "yes"], mode="classification")
+
+out = exp.explain_instance(X_test_arr[0], model.predict_proba, num_features=8)
+out.show_in_notebook()
+
+SHAP
+LIME
+Basis
+Shapley values (theory-backed)
+Local linear approximation
+Consistency
+Additive, exact
+Can vary between runs
+Global view
+Yes (aggregate)
+Local only
+Speed on trees
+Fast
+Slower
+Best for
+Default choice
+Quick, model-agnostic, text/image
+TIP: Run LIME twice. If the explanation changes a lot, it is unstable and should not be trusted.
+7. 🛠️ Surrogates, Counterfactuals and Debugging
+Global surrogate
+Train a shallow decision tree to mimic the black box's predictions (not the true labels). Check its fidelity (R² or accuracy vs the model) before trusting it.
+from sklearn.tree import DecisionTreeClassifier, export_text
+
+sur = DecisionTreeClassifier(max_depth=3).fit(X_train, model.predict(X_train))
+print(export_text(sur, feature_names=cols))
+Counterfactual explanations
+"What is the smallest change that flips the decision?" Example: loan denied; approved if income were +8,000 and debt ratio -5%. Useful for recourse. Libraries: DiCE, alibi.
+Debugging with explanations
+Symptom
+Likely cause
+One feature dominates absurdly
+Leakage (future info, target-derived column)
+ID or row-number is important
+Data ordering leak
+Sensitive feature or proxy ranks high
+Fairness risk
+Importance differs a lot train vs validation
+Overfitting
+Explanations flip across CV folds
+Unstable model or correlated features
+8. 🌍 Real-World Issues
+Explaining a pipeline
+SHAP needs the transformed features the model actually saw.
+prep   = pipe.named_steps["prep"]
+model  = pipe.named_steps["model"]
+X_t    = prep.transform(X_test)
+names  = prep.get_feature_names_out()
+
+sv = shap.TreeExplainer(model)(X_t)
+sv.feature_names = list(names)
+NOTE: One-hot encoding splits a feature into many columns. Sum SHAP values across a feature's dummy columns to get its total effect.
+Imbalance and SMOTE
+SMOTE only runs at fit time, so explain on real (non-resampled) data. Explanations of a model trained with class weights reflect the shifted decision boundary, so say so.
+Correlated features
+Group them, drop one, or use ALE and clustered SHAP. Never over-interpret a single ranking.
+Large data
+Explain a sample (500 to 5,000 rows). Use shap.sample(X, n) or shap.kmeans for background data.
+Reporting to stakeholders
+• Lead with the top 3 to 5 drivers in plain language
+• Show one or two local examples (waterfall)
+• State limits: correlation, not causation
+9. ⚠️ Common Mistakes
+❌ Mistake
+✅ Fix
+Trusting built-in weight importance
+Use permutation importance or SHAP
+Computing permutation importance on train data
+Use validation or test data
+Reading PDP with correlated features
+Use ALE or check correlations
+Treating importance as causation
+Explain behaviour only, test causes separately
+Running SHAP on raw, untransformed data in a pipeline
+Transform first, map names back
+Reporting SHAP as probabilities
+It is log-odds for classifiers (state units)
+Using one LIME run as fact
+Repeat and check stability
+Ignoring correlated features
+Group or drop them
+Explaining a weak model
+Fix the model first
+Skipping the sensitive-feature check
+Audit proxies and subgroup performance
+10. 🧪 Practical Project
+Dataset: your Day 10 tuned and calibrated XGBoost model (fraud, churn or loan default).
+Steps
+1. Compute built-in gain, permutation importance (validation, PR-AUC) and mean |SHAP|. Compare the three rankings
+2. Draw PDP + ICE for the top 3 features. Which show interactions?
+3. Verify a monotonic constraint with a PDP (Day 10)
+4. Build a SHAP beeswarm and 3 waterfalls: one true positive, one false positive, one false negative
+5. Explain the same 3 cases with LIME. Do they agree with SHAP?
+6. Fit a depth-3 surrogate tree and report its fidelity
+7. Check for leakage and for proxy features. Retrain after removing any suspect column and compare PR-AUC
+8. Write a half-page summary for a non-technical reader
+Results table (fill in as you go)
+Feature
+Gain rank
+Permutation rank
+SHAP rank
+Notes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Case
+True label
+Prediction
+Top SHAP drivers
+LIME agrees?
+True positive
+
+
+
+
+False positive
+
+
+
+
+False negative
+
+
+
+
+11. 📝 Cheat Sheet
+• Global = what the model uses overall. Local = why this one prediction
+• Built-in importance is biased. Prefer permutation (on validation) or SHAP
+• PDP = average effect, ICE = per-sample, ALE = best when features correlate
+• SHAP: prediction = base + sum(SHAP). Trees use TreeExplainer, classifier output is log-odds
+• Explain transformed features and sum dummy columns back to the original feature
+• LIME is fast and model-agnostic but unstable. Always repeat
+• Surrogate trees need a fidelity check
+• Counterfactuals give recourse: "what would change the decision?"
+• A surprising top feature usually means leakage. Check before celebrating
+• Explanations describe the model, not reality: correlation, not causation
