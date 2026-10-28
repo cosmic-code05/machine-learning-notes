@@ -1,4 +1,3 @@
-1. Cheat Sheet
 1. 🌱 Why Interpretability
 A model that scores well can still be wrong for the wrong reasons. Explanations help you:
 • Debug: find leakage, spurious features and data bugs
@@ -7,6 +6,7 @@ A model that scores well can still be wrong for the wrong reasons. Explanations 
 • Improve: errors point to missing features
 • Detect bias: see whether a sensitive feature, or a proxy for it, drives predictions
 TIP: If a feature you did not expect is the top driver, suspect leakage before you celebrate.
+
 2. 🧭 Global vs Local, Intrinsic vs Post-hoc
 
 Global
@@ -27,6 +27,7 @@ Examples
 Linear/logistic regression, small trees, GAMs
 SHAP, LIME, PDP, surrogates
 NOTE: Post-hoc methods explain the model, not the real world. A feature being important to the model does not mean it causes the outcome.
+
 3. 📏 Feature Importance (and its traps)
 Built-in importance (tree models)
 • gain: average loss reduction from splits on the feature (most useful)
@@ -59,6 +60,7 @@ SHAP mean abs
 Any
 Local + global, consistent
 Slower, also affected by correlation
+
 4. 📈 PDP, ICE and ALE
 Partial Dependence Plot (PDP)
 Shows the average prediction as one feature varies while all others keep their observed values.
@@ -74,6 +76,7 @@ ALE (Accumulated Local Effects)
 Like PDP but robust to correlated features, because it only uses realistic nearby values. Libraries: alibi, PyALE.
 WARNING: PDP assumes features are independent. With correlated features it evaluates impossible combinations (e.g. age 5 with 20 years of experience). Prefer ALE then.
 The PDP also connects to Day 10: it lets you check that a monotonic constraint behaves as intended.
+
 5. 🎲 SHAP Deep Dive
 The idea
 Shapley values come from game theory. Each feature is a "player", the prediction is the "payout", and a feature's SHAP value is its average marginal contribution across all feature orderings.
@@ -119,6 +122,7 @@ SHAP interaction values
 inter = explainer.shap_interaction_values(X_sample)   # shape (n, f, f)
 Separates each feature's main effect from pairwise interaction effects. Costly: use a sample.
 IMPORTANT: SHAP explains model behaviour, not causality. And with correlated features, credit is split between them arbitrarily, so rankings can be unstable.
+
 6. 🍋 LIME
 LIME explains one prediction by:
 1. Perturbing the sample to create nearby fake samples
@@ -151,6 +155,7 @@ Best for
 Default choice
 Quick, model-agnostic, text/image
 TIP: Run LIME twice. If the explanation changes a lot, it is unstable and should not be trusted.
+
 7. 🛠️ Surrogates, Counterfactuals and Debugging
 Global surrogate
 Train a shallow decision tree to mimic the black box's predictions (not the true labels). Check its fidelity (R² or accuracy vs the model) before trusting it.
@@ -173,6 +178,7 @@ Importance differs a lot train vs validation
 Overfitting
 Explanations flip across CV folds
 Unstable model or correlated features
+
 8. 🌍 Real-World Issues
 Explaining a pipeline
 SHAP needs the transformed features the model actually saw.
@@ -194,6 +200,7 @@ Reporting to stakeholders
 • Lead with the top 3 to 5 drivers in plain language
 • Show one or two local examples (waterfall)
 • State limits: correlation, not causation
+
 9. ⚠️ Common Mistakes
 ❌ Mistake
 ✅ Fix
@@ -217,6 +224,7 @@ Explaining a weak model
 Fix the model first
 Skipping the sensitive-feature check
 Audit proxies and subgroup performance
+
 10. 🧪 Practical Project
 Dataset: your Day 10 tuned and calibrated XGBoost model (fraud, churn or loan default).
 Steps
